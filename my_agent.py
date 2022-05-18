@@ -516,7 +516,7 @@ class ClimberAgent(BaseAgent):
         # After all simulations return the final action which includes all reconnect and topology changes
         if do_nothing_rho <= reconnect_action_rho and do_nothing_rho <= change_topology_rho \
         and do_nothing_rho <= redispatch_rho and do_nothing_rho <= curtail_rho and do_nothing_rho <= combined_action_rho:
-            if do_nothing_rho >= 1.3 and self.alarm_overflow_flag = False:
+            if do_nothing_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif do_nothing_rho < 1.3:
                 self.alarm_overflow_flag = False
@@ -524,7 +524,7 @@ class ClimberAgent(BaseAgent):
         if reconnect_action_rho < do_nothing_rho and reconnect_action_rho <= change_topology_rho \
         and reconnect_action_rho < redispatch_rho and reconnect_action_rho <= curtail_rho and reconnect_action_rho <= combined_action_rho:
             print("Reconnect",reconnect_action)
-            if reconnect_action_rho >= 1.3 and self.alarm_overflow_flag = False:
+            if reconnect_action_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif reconnect_action_rho < 1.3:
                 self.alarm_overflow_flag = False
@@ -532,7 +532,7 @@ class ClimberAgent(BaseAgent):
         if change_topology_rho < do_nothing_rho and change_topology_rho < reconnect_action_rho \
         and change_topology_rho < redispatch_rho and change_topology_rho <= curtail_rho and change_topology_rho <= combined_action_rho: 
             print("Change topology",change_topology_action)
-            if reconnect_action_rho >= 1.3 and self.alarm_overflow_flag = False:
+            if reconnect_action_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif reconnect_action_rho < 1.3:
                 self.alarm_overflow_flag = False
@@ -540,7 +540,7 @@ class ClimberAgent(BaseAgent):
         if redispatch_rho < do_nothing_rho and redispatch_rho < reconnect_action_rho \
         and redispatch_rho < change_topology_rho  and redispatch_rho <= curtail_rho and redispatch_rho <= combined_action_rho:
             print("Redispatch action", redispatch_action)
-            if redispatch_rho >= 1.3 and self.alarm_overflow_flag = False:
+            if redispatch_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif redispatch_rho < 1.3:
                 self.alarm_overflow_flag = False
@@ -548,7 +548,7 @@ class ClimberAgent(BaseAgent):
         if curtail_rho < do_nothing_rho and curtail_rho < reconnect_action_rho \
         and curtail_rho < change_topology_rho and curtail_rho < redispatch_rho and curtail_rho <= combined_action_rho:
             print("Curtail action", curtail_action)
-            if curtail_rho >= 1.3 and self.alarm_overflow_flag = False:
+            if curtail_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif curtail_rho < 1.3:
                 self.alarm_overflow_flag = False
@@ -557,6 +557,10 @@ class ClimberAgent(BaseAgent):
         and combined_action_rho < redispatch_rho and combined_action_rho < reconnect_action_rho \
         and combined_action_rho < curtail_rho:
             print("Combined action", combined_action)
+            if combined_action_rho >= 1.3 and self.alarm_overflow_flag == False:
+                self.alarm_overflow_flag = True
+            elif combined_action_rho < 1.3:
+                self.alarm_overflow_flag = False
             return combined_action
         if do_nothing_rho == 1000 and do_nothing_rho == reconnect_action_rho \
         and do_nothing_rho == change_topology_rho and do_nothing_rho == redispatch_rho \
