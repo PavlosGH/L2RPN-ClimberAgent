@@ -23,7 +23,7 @@ class ClimberAgent(BaseAgent):
             obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(do_nothing)
             observation._obs_env._reset_to_orig_state()
             if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
-                #Find the max rho exists in sumalated network 
+                #Find the max rho exists in simulated network 
                 do_nothing_rho = np.max(obs_simulate.rho)                
         except BaseException:
 #             print('do_nothing_action error')
@@ -48,11 +48,10 @@ class ClimberAgent(BaseAgent):
                     if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
                         current_action_rho = np.max(obs_simulate.rho)
                         if current_action_rho < reconnect_action_rho:
-                            #Find the max rho exists in sumalated network 
+                            #Find the max rho exists in simulated network 
                             reconnect_action_rho = current_action_rho
                             reconnect_action =current_action 
                 except BaseException:
-#                     print('reconnect_action error')
                     action_errors = action_errors + 1
                     continue  
             if len(reconnect_actions) > 1:
@@ -71,13 +70,12 @@ class ClimberAgent(BaseAgent):
                             current_action_rho = np.max(obs_simulate.rho)
                             print("Rho of combined reconnect ", current_action_rho)
                             if current_action_rho < reconnect_action_rho:
-                                #Find the max rho exists in sumalated network 
+                                #Find the max rho exists in simulated network 
                                 reconnect_action_rho = current_action_rho
                                 reconnect_action =current_action
                                 print("Rho of combined reconnect ", reconnect_action_rho)
                                 print("This action is the combined reconnect.", reconnect_action)
                     except BaseException:
-#                         print('reconnect_action error')
                         action_errors = action_errors + 1
                         continue
 
@@ -89,7 +87,7 @@ class ClimberAgent(BaseAgent):
         change_topology_actions = []
         index_top = 0
         
-        # Change buses where there is an overflow 
+        # Change busbars where there is an overflow 
         if len(overflow_lines) != 0:
             for line in overflow_lines:                
                 current_action = self.action_space()
@@ -104,9 +102,8 @@ class ClimberAgent(BaseAgent):
                         current_change_topology_rho = np.max(obs_simulate.rho)
                         if current_change_topology_rho < change_topology_rho:
                             change_topology_rho = current_change_topology_rho
-                            change_topology_action = current_action #self.action_space({"change_bus": overflow_lines})
+                            change_topology_action = current_action 
                 except BaseException:
-#                     print('change_topology_action error')
                     action_errors = action_errors + 1
             if len(change_topology_actions) > 1:
                 while index_top <= (len(change_topology_actions) - 1):
@@ -124,13 +121,12 @@ class ClimberAgent(BaseAgent):
                             current_action_rho = np.max(obs_simulate.rho)
                             print("Rho of combined topology ", current_action_rho)
                             if current_action_rho < change_topology_rho:
-                                #Find the max rho exists in sumalated network 
+                                #Find the max rho exists in simulated network 
                                 change_topology_rho = current_action_rho
                                 change_topology_action = current_action 
                                 print("Rho of combined topology ", change_topology_rho)
                                 print("This action is the combined topology.", change_topology_action)
                     except BaseException:
-#                         print('change_topology_action error')
                         action_errors = action_errors + 1
                         continue
                 
@@ -166,6 +162,7 @@ class ClimberAgent(BaseAgent):
                         observation._obs_env._reset_to_orig_state()
                         if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
                             raise BaseException
+                        #Keep the first five redispatch actions which give better results.
                         if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
                             current_redispatch_rho = np.max(obs_simulate.rho)
                             if current_redispatch_rho < redispatch_rho:
@@ -183,12 +180,13 @@ class ClimberAgent(BaseAgent):
                             elif current_redispatch_rho < redispatch_rho_4:
                                 redispatch_rho_4 = current_redispatch_rho
                                 redispatch_action_4 = current_action
+#                             If you want to reduce computing time
 #                             if redispatch_rho < 1.0:
 #                                 print("Break")
 #                                 break
                     except BaseException:
-#                         print('redispatch_action error')
                         action_errors = action_errors + 1
+#                If you want to reduce computing time
 #                 if redispatch_rho < 1.0:
 #                     print("Break")
 #                     break
@@ -197,11 +195,11 @@ class ClimberAgent(BaseAgent):
         current_combined_redispatch_rho = 0
         combined_redispatch_rho = 1000
         combined_redispatch_action = self.action_space()
+        #Try all the combination for the best five redispatch actions.
         if redispatch_rho != 1000 and redispatch_rho_1 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action + redispatch_action_1
-                print("1+2",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -210,19 +208,14 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
-            except BaseException:
-#                 print('combined actions error') 
+            except BaseException: 
                 action_errors = action_errors + 1
     
         if redispatch_rho != 1000 and redispatch_rho_2 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action + redispatch_action_2
-                print("1+3",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -231,19 +224,14 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
     
         if redispatch_rho != 1000 and redispatch_rho_3 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action + redispatch_action_3
-                print("1+4",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -252,19 +240,14 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
     
         if redispatch_rho != 1000 and redispatch_rho_4 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action + redispatch_action_4
-                print("1+5",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -273,12 +256,8 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
     
         
@@ -287,7 +266,6 @@ class ClimberAgent(BaseAgent):
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action_1 + redispatch_action_2
-                print("2+3",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -296,19 +274,14 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
     
         if redispatch_rho_1 != 1000 and redispatch_rho_3 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action_1 + redispatch_action_3
-                print("2+4",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -317,18 +290,14 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
+                
         if redispatch_rho_1 != 1000 and redispatch_rho_4 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action_1 + redispatch_action_4
-                print("2+5",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -337,19 +306,14 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
-            except BaseException:
-#                 print('combined actions error') 
+            except BaseException: 
                 action_errors = action_errors + 1
     
         if redispatch_rho_2 != 1000 and redispatch_rho_3 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action_2 + redispatch_action_3
-                print("3+4",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -358,19 +322,14 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
     
         if redispatch_rho_2 != 1000 and redispatch_rho_4 !=1000:
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action_2 + redispatch_action_4
-                print("3+5",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -379,12 +338,8 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
     
         if redispatch_rho_3 != 1000 and redispatch_rho_4 !=1000:
@@ -400,12 +355,8 @@ class ClimberAgent(BaseAgent):
                     current_combined_redispatch_rho = np.max(obs_simulate.rho)
                     if current_combined_redispatch_rho < combined_redispatch_rho:
                         combined_redispatch_rho = current_combined_redispatch_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_redispatch_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
     
         if combined_redispatch_rho < redispatch_rho:
@@ -436,12 +387,13 @@ class ClimberAgent(BaseAgent):
                             if current_curtail_rho < curtail_rho and current_curtail_rho < 1.0:
                                 curtail_rho = current_curtail_rho
                                 curtail_action = current_action
+                            #To reduce computing time
                             if curtail_rho < 1.0:
                                 print("Break")
                                 break
                     except BaseException:
-#                         print('curtail_action error')
                         action_errors = action_errors + 1
+                #To reduce computing time
                 if curtail_rho < 1.0:
                     print("Break")
                     break
@@ -454,7 +406,6 @@ class ClimberAgent(BaseAgent):
         if reconnect_action_rho != 1000 and change_topology_rho !=1000:
             try:
                 current_action = self.action_space()
-                print(len(combined_actions_array))
                 current_action = reconnect_action + change_topology_action
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
@@ -464,12 +415,8 @@ class ClimberAgent(BaseAgent):
                     current_combined_rho = np.max(obs_simulate.rho)
                     if current_combined_rho < combined_action_rho:
                         combined_action_rho = current_combined_rho
-                        #                             print(redispatch_rho)
-                        # A better solution is to convert the action into a vect and add every redispatch action gives a lower rho.
-                        # To do that i have to check if the combined action is proper in simulate.
                         combined_action = current_action
             except BaseException:
-#                 print('combined actions error') 
                 action_errors = action_errors + 1
             
         if reconnect_action_rho != 1000 and redispatch_rho != 1000:
@@ -481,16 +428,11 @@ class ClimberAgent(BaseAgent):
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
                         raise BaseException
                 if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
-                    #                         print("I am not done with this redispatch action :", current_action)
                     current_combined_rho = np.max(obs_simulate.rho)
-                    #                         print(current_redispatch_rho)
-                    #                     print("Redispatch rho before checking :", current_redispatch_rho)
-                    #                         if np.max(obs_simulate.rho) < 0.99 and current_redispatch_rho < redispatch_rho:
                     if current_combined_rho < combined_action_rho:
                         combined_action_rho = current_combined_rho
                         combined_action = current_action
             except BaseException:
-#                 print('combined action error')
                 action_errors = action_errors + 1
             
         if reconnect_action_rho != 1000 and curtail_rho != 1000:
@@ -502,16 +444,11 @@ class ClimberAgent(BaseAgent):
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
                         raise BaseException
                 if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
-                    #                         print("I am not done with this redispatch action :", current_action)
                     current_combined_rho = np.max(obs_simulate.rho)
-                    #                         print(current_redispatch_rho)
-                    #                     print("Redispatch rho before checking :", current_redispatch_rho)
-                    #                         if np.max(obs_simulate.rho) < 0.99 and current_redispatch_rho < redispatch_rho:
                     if current_combined_rho < combined_action_rho:
                         combined_action_rho = current_combined_rho
                         combined_action = current_action
             except BaseException:
-#                 print('combined action error')
                 action_errors = action_errors + 1
             
             
@@ -524,16 +461,11 @@ class ClimberAgent(BaseAgent):
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
                         raise BaseException
                 if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
-                    #                         print("I am not done with this redispatch action :", current_action)
                     current_combined_rho = np.max(obs_simulate.rho)
-                    #                         print(current_redispatch_rho)
-                    #                     print("Redispatch rho before checking :", current_redispatch_rho)
-                    #                         if np.max(obs_simulate.rho) < 0.99 and current_redispatch_rho < redispatch_rho:
                     if current_combined_rho < combined_action_rho:
                         combined_action_rho = current_combined_rho
                         combined_action = current_action
             except BaseException:
-#                 print('combined action error')
                 action_errors = action_errors + 1
             
         if change_topology_rho != 1000 and curtail_rho != 1000:
@@ -545,16 +477,11 @@ class ClimberAgent(BaseAgent):
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
                         raise BaseException
                 if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
-                    #                         print("I am not done with this redispatch action :", current_action)
                     current_combined_rho = np.max(obs_simulate.rho)
-                    #                         print(current_redispatch_rho)
-                    #                     print("Redispatch rho before checking :", current_redispatch_rho)
-                    #                         if np.max(obs_simulate.rho) < 0.99 and current_redispatch_rho < redispatch_rho:
                     if current_combined_rho < combined_action_rho:
                         combined_action_rho = current_combined_rho
                         combined_action = current_action
             except BaseException:
-#                 print('combined action error')
                 action_errors = action_errors + 1
             
             
@@ -567,18 +494,15 @@ class ClimberAgent(BaseAgent):
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
                         raise BaseException
                 if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
-                    #                         print("I am not done with this redispatch action :", current_action)
                     current_combined_rho = np.max(obs_simulate.rho)
                     if current_combined_rho < combined_action_rho:
                         combined_action_rho = current_combined_rho
                         combined_action = current_action
             except BaseException:
-#                 print('combined action error')
                 action_errors = action_errors + 1
             
         
         
-#         print(combined_actions_array)
 
         
     
@@ -599,7 +523,6 @@ class ClimberAgent(BaseAgent):
             return do_nothing
         if reconnect_action_rho < do_nothing_rho and reconnect_action_rho <= change_topology_rho \
         and reconnect_action_rho < redispatch_rho and reconnect_action_rho <= curtail_rho and reconnect_action_rho <= combined_action_rho:
-#             print(type(reconnect_action))
             print("Reconnect",reconnect_action)
             if reconnect_action_rho >= 1.3 and self.alarm_overflow_flag = False:
                 self.alarm_overflow_flag = True
