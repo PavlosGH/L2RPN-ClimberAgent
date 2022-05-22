@@ -588,7 +588,7 @@ def make_agent(env, this_directory_path):
     return my_agent
 
 
-submission_path ="C:\\Users\\pavlo\\data_grid2opL2RPN_icaps2021_starting_kit_Development_Phase\\example_submissions\\submission\\my_agent.py"
+submission_path ="Agent's local path"
 agent = make_agent(env, submission_path)
 
 
