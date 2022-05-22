@@ -1,5 +1,7 @@
 # L2RPN-ClimberAgent
 
+This repository contains the implementation of Climber Agent. Climber Agent is able to manage a virtual power grid, provided into Grid2op environment. 
+
 # Grid2op Installation
 The Grid2op platform can be installed as any python package with (if you want to only install grid2op - otherwise do the previous command from the starting-kit):
 
