@@ -1,3 +1,0 @@
-# folders
-.pynb_checkpoints
-_pycache_
