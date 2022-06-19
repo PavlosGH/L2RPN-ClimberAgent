@@ -8,6 +8,7 @@ class ClimberAgent(BaseAgent):
         BaseAgent.__init__(self, action_space=action_space)
         self.alarms_lines_area = env.alarms_lines_area
         self.alarms_area_names = env.alarms_area_names
+
         self.alarm_overflow_flag = False
 
     def act(self, observation, reward, done):
@@ -58,9 +59,9 @@ class ClimberAgent(BaseAgent):
                 while index <= (len(reconnect_actions) - 1):                    
                     index = index - 1
                     current_action = reconnect_actions[index]+ reconnect_actions[index+1]
-                    print("This action is the combined reconnect.", current_action)
+#                     print("This action is the combined reconnect.", current_action)
                     index = index + 2
-                    print("Index in reconnect action is : ", index)
+#                     print("Index in reconnect action is : ", index)
                     try:
                         obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                         observation._obs_env._reset_to_orig_state()
@@ -68,13 +69,13 @@ class ClimberAgent(BaseAgent):
                             raise BaseException
                         if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
                             current_action_rho = np.max(obs_simulate.rho)
-                            print("Rho of combined reconnect ", current_action_rho)
+#                             print("Rho of combined reconnect ", current_action_rho)
                             if current_action_rho < reconnect_action_rho:
                                 #Find the max rho exists in simulated network 
                                 reconnect_action_rho = current_action_rho
                                 reconnect_action =current_action
-                                print("Rho of combined reconnect ", reconnect_action_rho)
-                                print("This action is the combined reconnect.", reconnect_action)
+#                                 print("Rho of combined reconnect ", reconnect_action_rho)
+#                                 print("This action is the combined reconnect.", reconnect_action)
                     except BaseException:
                         action_errors = action_errors + 1
                         continue
@@ -109,9 +110,9 @@ class ClimberAgent(BaseAgent):
                 while index_top <= (len(change_topology_actions) - 1):
                     index_top = index_top - 1
                     current_action = change_topology_actions[index_top] + change_topology_actions[index_top+1]
-                    print("This action is the combined topology.", current_action)
+#                     print("This action is the combined topology.", current_action)
                     index_top = index_top + 2
-                    print("Index in topology action is : ", index_top)
+#                     print("Index in topology action is : ", index_top)
                     try:
                         obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                         observation._obs_env._reset_to_orig_state()
@@ -119,13 +120,13 @@ class ClimberAgent(BaseAgent):
                             raise BaseException
                         if not done_simulate and obs_simulate is not None and not any(np.isnan(obs_simulate.rho)):
                             current_action_rho = np.max(obs_simulate.rho)
-                            print("Rho of combined topology ", current_action_rho)
+#                             print("Rho of combined topology ", current_action_rho)
                             if current_action_rho < change_topology_rho:
                                 #Find the max rho exists in simulated network 
                                 change_topology_rho = current_action_rho
                                 change_topology_action = current_action 
-                                print("Rho of combined topology ", change_topology_rho)
-                                print("This action is the combined topology.", change_topology_action)
+#                                 print("Rho of combined topology ", change_topology_rho)
+#                                 print("This action is the combined topology.", change_topology_action)
                     except BaseException:
                         action_errors = action_errors + 1
                         continue
@@ -152,7 +153,7 @@ class ClimberAgent(BaseAgent):
         # Redispatch action if all the other actions gives an overflowed state
         if do_nothing_rho >= 1.0 and reconnect_action_rho >= 1.0 \
         and change_topology_rho >= 1.0 and redispatch_rho >= 1.0:
-            print(do_nothing_rho, reconnect_action_rho, change_topology_rho, redispatch_rho)
+#             print(do_nothing_rho, reconnect_action_rho, change_topology_rho, redispatch_rho)
             for amount in redispatch_amount:
                 for id in range(22):
                     current_action = self.action_space()
@@ -346,7 +347,7 @@ class ClimberAgent(BaseAgent):
             try:
                 current_action = self.action_space()
                 current_action = redispatch_action_3 + redispatch_action_4
-                print("4+5",current_action)
+#                 print("4+5",current_action)
                 obs_simulate, reward_simulate, done_simulate, info_simulate = observation.simulate(current_action)
                 observation._obs_env._reset_to_orig_state()
                 if info_simulate['is_illegal'] or info_simulate['is_ambiguous']:
@@ -372,7 +373,7 @@ class ClimberAgent(BaseAgent):
                                               # if not in range [0, 1.0] an "ambiguous action" will be raised when calling "env.step"
         if do_nothing_rho >= 1.0 and reconnect_action_rho >= 1.0 \
         and change_topology_rho >= 1.0 and redispatch_rho >= 1.0:
-            print(do_nothing_rho, reconnect_action_rho, change_topology_rho, redispatch_rho)
+#             print(do_nothing_rho, reconnect_action_rho, change_topology_rho, redispatch_rho)
             for ratio in ratio_curtailment:
                 for id in range(22):
                     try:                   
@@ -504,7 +505,12 @@ class ClimberAgent(BaseAgent):
         
         
 
-        
+        res = self.action_space({})
+        if (np.max(observation.rho) >= 1.0):
+            zones_alert = self.get_region_alert(observation)
+            print(zones_alert)
+            res = self.action_space({"raise_alarm": zones_alert})
+            print(res)
     
         
 #         print("Do nothing rho :",do_nothing_rho)
@@ -516,51 +522,87 @@ class ClimberAgent(BaseAgent):
         # After all simulations return the final action which includes all reconnect and topology changes
         if do_nothing_rho <= reconnect_action_rho and do_nothing_rho <= change_topology_rho \
         and do_nothing_rho <= redispatch_rho and do_nothing_rho <= curtail_rho and do_nothing_rho <= combined_action_rho:
-            if do_nothing_rho >= 1.3 and self.alarm_overflow_flag == False:
-                self.alarm_overflow_flag = True
-            elif do_nothing_rho < 1.3:
-                self.alarm_overflow_flag = False
+#             if do_nothing_rho >= 1.3 and self.alarm_overflow_flag == False:
+#                 self.alarm_overflow_flag = True
+#             elif do_nothing_rho < 1.3:
+#                 self.alarm_overflow_flag = False
+            do_nothing = do_nothing + res
             return do_nothing
         if reconnect_action_rho < do_nothing_rho and reconnect_action_rho <= change_topology_rho \
-        and reconnect_action_rho < redispatch_rho and reconnect_action_rho <= curtail_rho and reconnect_action_rho <= combined_action_rho:
+        and reconnect_action_rho <= redispatch_rho and reconnect_action_rho <= curtail_rho and reconnect_action_rho <= combined_action_rho:
             print("Reconnect",reconnect_action)
+            print("Do nothing rho :",do_nothing_rho)
+            print("Reconnect rho :",reconnect_action_rho)
+            print("Change topology rho :",change_topology_rho)
+            print("Redispatch rho : ", redispatch_rho)
+            print("Curtail rho : ", curtail_rho)
+            print("Combined rho : ", combined_action_rho)
             if reconnect_action_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif reconnect_action_rho < 1.3:
                 self.alarm_overflow_flag = False
+            reconnect_action = reconnect_action + res
             return reconnect_action
         if change_topology_rho < do_nothing_rho and change_topology_rho < reconnect_action_rho \
-        and change_topology_rho < redispatch_rho and change_topology_rho <= curtail_rho and change_topology_rho <= combined_action_rho: 
+        and change_topology_rho <= redispatch_rho and change_topology_rho <= curtail_rho and change_topology_rho <= combined_action_rho: 
             print("Change topology",change_topology_action)
+            print("Do nothing rho :",do_nothing_rho)
+            print("Reconnect rho :",reconnect_action_rho)
+            print("Change topology rho :",change_topology_rho)
+            print("Redispatch rho : ", redispatch_rho)
+            print("Curtail rho : ", curtail_rho)
+            print("Combined rho : ", combined_action_rho)
             if reconnect_action_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif reconnect_action_rho < 1.3:
                 self.alarm_overflow_flag = False
+            change_topology_action = change_topology_action + res
             return change_topology_action
         if redispatch_rho < do_nothing_rho and redispatch_rho < reconnect_action_rho \
         and redispatch_rho < change_topology_rho  and redispatch_rho <= curtail_rho and redispatch_rho <= combined_action_rho:
             print("Redispatch action", redispatch_action)
+            print("Do nothing rho :",do_nothing_rho)
+            print("Reconnect rho :",reconnect_action_rho)
+            print("Change topology rho :",change_topology_rho)
+            print("Redispatch rho : ", redispatch_rho)
+            print("Curtail rho : ", curtail_rho)
+            print("Combined rho : ", combined_action_rho)
             if redispatch_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif redispatch_rho < 1.3:
                 self.alarm_overflow_flag = False
+            redispatch_action = redispatch_action + res
             return redispatch_action
         if curtail_rho < do_nothing_rho and curtail_rho < reconnect_action_rho \
         and curtail_rho < change_topology_rho and curtail_rho < redispatch_rho and curtail_rho <= combined_action_rho:
             print("Curtail action", curtail_action)
+            print("Do nothing rho :",do_nothing_rho)
+            print("Reconnect rho :",reconnect_action_rho)
+            print("Change topology rho :",change_topology_rho)
+            print("Redispatch rho : ", redispatch_rho)
+            print("Curtail rho : ", curtail_rho)
+            print("Combined rho : ", combined_action_rho)
             if curtail_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif curtail_rho < 1.3:
                 self.alarm_overflow_flag = False
+            curtail_action = curtail_action + res
             return curtail_action
         if combined_action_rho < do_nothing_rho and combined_action_rho < change_topology_rho \
         and combined_action_rho < redispatch_rho and combined_action_rho < reconnect_action_rho \
         and combined_action_rho < curtail_rho:
             print("Combined action", combined_action)
+            print("Do nothing rho :",do_nothing_rho)
+            print("Reconnect rho :",reconnect_action_rho)
+            print("Change topology rho :",change_topology_rho)
+            print("Redispatch rho : ", redispatch_rho)
+            print("Curtail rho : ", curtail_rho)
+            print("Combined rho : ", combined_action_rho)
             if combined_action_rho >= 1.3 and self.alarm_overflow_flag == False:
                 self.alarm_overflow_flag = True
             elif combined_action_rho < 1.3:
                 self.alarm_overflow_flag = False
+            combined_action = combined_action + res
             return combined_action
         if do_nothing_rho == 1000 and do_nothing_rho == reconnect_action_rho \
         and do_nothing_rho == change_topology_rho and do_nothing_rho == redispatch_rho \
@@ -569,7 +611,23 @@ class ClimberAgent(BaseAgent):
             print("Action errors are : ", action_errors)
             return do_nothing
         
-    
+    def get_region_alert(self, observation):
+        # extract the zones they belong too
+        zones_these_lines = set()
+        zone_for_each_lines = self.alarms_lines_area
+        
+        lines_overloaded = np.where(observation.rho >= 1)[0].tolist()  # obs.rho>0.6
+        #print(lines_overloaded)
+        for line_id in lines_overloaded:
+            line_name = observation.name_line[line_id]
+            for zone_name in zone_for_each_lines[line_name]:
+                zones_these_lines.add(zone_name)
+        zones_these_lines = list(zones_these_lines)
+        zones_ids_these_lines = [self.alarms_area_names.index(zone) for zone in zones_these_lines]
+        return zones_ids_these_lines  
+        
+        
 def make_agent(env, this_directory_path):
+    # my_agent = MyAgent(env.action_space,  env.alarms_lines_area, env.alarms_area_names, submission_path)
     my_agent = ClimberAgent(env.action_space)
     return my_agent
